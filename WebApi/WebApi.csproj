@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Application.Events" Version="1.0.0" />
+      <PackageReference Include="AutoMapper" Version="10.1.1" />
+      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+      <PackageReference Include="MassTransit" Version="7.1.6" />
+      <PackageReference Include="MassTransit.AspNetCore" Version="7.1.6" />
+      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.1.6" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.6" />
+      <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />
+      <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="5.0.3" />
+      <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
+      <PackageReference Include="Topshelf" Version="4.3.0" />
+      <PackageReference Include="WebAPIContrib" Version="2.0.0" />
+    </ItemGroup>
+
+
+</Project>
