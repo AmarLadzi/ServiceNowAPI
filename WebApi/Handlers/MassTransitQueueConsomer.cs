@@ -28,8 +28,8 @@ namespace WebApi.Handlers
         public async Task Consume(ConsumeContext<EntityCreated> context)
         {
             string URL = "https://dev37028.service-now.com/api/now/v1/table/alm_hardware";
-            var television = context.Message.Payload;
-            _serviceNowTelevision.CreateTelevisionOnService(URL,television);
+            // var television = context.Message.Payload;
+            // _serviceNowTelevision.CreateTelevisionOnService(URL,television);
         }
     }
 }

@@ -1,10 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using WindowsService.Triggers;
+using WindowsService.Triggers.AlarmInfo;
+using Application.Events.Entity.Events;
 using AutoMapper;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -15,18 +23,20 @@ using WebApi.Models;
 namespace WebApi.Controllers
 {
     [Authorize]
-    [Route("api/ticket")]
+    [Route("api/")]
     [ApiController]
-    public class ServiceNow : ControllerBase
+    public class ServiceNowTicket : ControllerBase
     {
         private readonly IMapper _mapper;
+        private readonly IBus _ibus;
 
-        public ServiceNow(IMapper mapper)
+        public ServiceNowTicket(IMapper mapper, IBus ibus)
         {
             _mapper = mapper;
+            _ibus = ibus;
         }
 
-        // GET
+        //faire une requête vers servicenow pour recevoir une liste de ticket déjà créer
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -49,37 +59,42 @@ namespace WebApi.Controllers
             return Ok(JsonConvert.SerializeObject(salut));
         }
 
-
-        [HttpPost]
-        public IActionResult CreateOneIncidentFakeData()
+        //requête pour envoyer un ticker sur la queue lorsque servicenow créer un ticket
+        // [HttpPost("fromservicenow/sendTicket")]
+        // public async Task  sendIncident(JsonElement jobject)
+        // {
+        //     IncidentDTO incident = JsonConvert.DeserializeObject<IncidentDTO>(jobject.ToString());
+        //     await _ibus.Publish(incident);
+        // }
+        [HttpPost("fromservicenow/sendTicketUpdated")]
+        public async Task sendIncidentUpdated(JsonElement jobject)
         {
-            string URL = "https://dev37028.service-now.com/api/now/v1/table/incident";
-            string USERNAME = "addvals2";
-            string PASSWORD = "00214521";
-            string SHORT_DESCRIPTION = "Samyyyyyyyy";
-            string COMMENTS = "Il n'existe pas de commentaire sur celle ci";
-
-            // return CreateIncidentTicket(URL, USERNAME, PASSWORD, SHORT_DESCRIPTION, COMMENTS);
-            return Ok();
+            var incident = JsonConvert.DeserializeObject<IncidentDTO>(jobject.ToString());
+            // var array = incident.description.Split("\n").Select(x => x.Split("->")).ToList();
+            // incident.VariableRowDto = new VariableRowDto()
+            // {
+            //     id = Guid.Parse(array[1][1]),
+            //     Name = array[0][1],
+            //     EntityTypeId = Guid.Parse(array[3][1]),
+            //     EntityTypeName = array[2][1]
+            // };
+            IncidentChanged incidentChanged = new IncidentChanged() {Name = "IncidentChanged", Payload = incident};
+            await _ibus.Publish(incidentChanged);
         }
 
-        [HttpGet("rabbitmq/")]
-        public IActionResult CreateOneIncidentFromQueue()
+        [HttpPost("fromservicenow/sendTicket")]
+        public async Task sendIncident(JsonElement jobject)
         {
-            return Ok();
+            var incident = JsonConvert.DeserializeObject<IncidentDTO>(jobject.ToString());
+            IncidentChanged incidentChanged = new IncidentChanged() {Name = "IncidentChanged", Payload = incident};
+            await _ibus.Publish(incidentChanged);
         }
 
-        public IActionResult CreateIncidentTicket(string URL)
+        //créer un ticket depuis une requête externe vers servicenow 
+        [HttpPost("create/ticket/")]
+        public IActionResult CreateIncidentTicket(string DATA)
         {
-            List<Incident> eList = new List<Incident>();
-            Incident e = new Incident();
-            // e.number = bosObject.id.ToString();
-            // e.short_description = bosObject.description;
-            // e.description = bosObject.name;
-
-            eList.Add(e);
-
-            string DATA = JsonConvert.SerializeObject(eList, Formatting.Indented);
+            var URL = "https://dev37028.service-now.com/api/now/v1/table/incident";
 
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(URL);
@@ -91,7 +106,6 @@ namespace WebApi.Controllers
                 new MediaTypeWithQualityHeaderValue("application/json"));
             HttpContent content = new StringContent(DATA, UTF8Encoding.UTF8, "application/json");
             HttpResponseMessage messge = client.PostAsync(URL, content).Result;
-            string description = string.Empty;
             Console.WriteLine("Result code is {0} with message {1}", messge.IsSuccessStatusCode, messge.StatusCode);
             if (messge.IsSuccessStatusCode)
             {
@@ -99,7 +113,7 @@ namespace WebApi.Controllers
                 return Ok(result);
             }
 
-            return Content("erreur");
+            return Content("Oh oui");
         }
     }
 }

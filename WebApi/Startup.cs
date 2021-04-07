@@ -35,17 +35,31 @@ namespace WebApi
             services.AddMassTransit(x =>
             {
                 x.AddConsumer<MassTransitQueueConsomer>();
-
+                x.AddConsumer<AlarmsConsumer>();
+                // x.AddConsumer<IncidentConsumer>();
                 x.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(cfg =>
                 {
                     // configure health checks for this bus instance
                     cfg.Host("amqp://amar:amar@rabbitmq.webmed.be");
+                    
                     cfg.ReceiveEndpoint("service-now-entity-created-event-queue", ep =>
                     {
                         ep.PrefetchCount = 16;
                         ep.UseMessageRetry(r => r.Interval(2, 100));
                         ep.ConfigureConsumer<MassTransitQueueConsomer>(provider);
                     });
+                    cfg.ReceiveEndpoint("app-vision-bos-events-alarms-changed.q", ep =>
+                    {
+                        ep.PrefetchCount = 16;
+                        ep.UseMessageRetry(r => r.Interval(2, 100));
+                        ep.ConfigureConsumer<AlarmsConsumer>(provider);
+                    });
+
+                    // cfg.ReceiveEndpoint("service-now-after-created-incident-queue", ep =>
+                    // {
+                    //     ep.Consumer<IncidentConsumer>(provider);
+                    // });
+                    
                 }));
             });
             services.AddMassTransitHostedService();
